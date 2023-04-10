@@ -1,0 +1,41 @@
+
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//host:webpack-cli/package_json.bzl", "bin")
+
+npm_link_all_packages(
+    name = "node_modules",
+)
+
+js_library(
+    name = "lib",
+    srcs = ["package.json", ".babelrc"] + glob(["src/**/*.jsx", "src/**/*.js", "src/**/*.css", "src/**/*.scss", "public/**/*"]),
+    deps = [    
+        ":node_modules/css-loader",
+        ":node_modules/mini-css-extract-plugin",
+        ":node_modules/ts-loader",
+        ":node_modules/html-webpack-plugin",
+        ":node_modules/style-loader",
+        ":node_modules/react",
+        ":node_modules/react-dom"
+    ],
+)
+
+bin.webpack_cli(
+    name = "host-build",
+    srcs = [
+        ":lib",
+        ":webpack.config.js",
+    ],
+    outs = [
+        "dist/main.js",
+        "dist/main.css",
+        "dist/index.html",
+
+    ],
+    args = [
+        "--config webpack.config.js",
+    ],
+    chdir = package_name(),
+    log_level = "debug",
+)

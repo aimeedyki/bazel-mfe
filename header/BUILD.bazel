@@ -1,0 +1,73 @@
+
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//header:webpack-cli/package_json.bzl", "bin")
+
+npm_link_all_packages(
+    name = "node_modules",
+)
+
+js_library(
+    name = "lib",
+    srcs = ["package.json"] + glob(["src/**/*.jsx", "src/**/*.js", "src/**/*.css", "src/**/*.scss", "public/**/*"]),
+    deps = [    
+       ":src_ts",
+    ],
+)
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//visibility:public"],
+)
+
+SRC_PATTERNS = [
+    "src/**/*.tsx",
+    "src/*.tsx",
+    "src/*.ts",
+]
+
+TEST_PATTERNS = [
+    "src/*.test.tsx",
+    "src/*.test.ts",
+    "*.spec.tsx",
+    "*.spec.ts",
+]
+
+ts_project(
+    name = "src_ts",
+    srcs = ["package.json"] + glob(
+        include = SRC_PATTERNS,
+        exclude = TEST_PATTERNS,
+    ),
+    declaration = True,
+    resolve_json_module = True,
+    tsconfig = "//header:tsconfig",
+    deps = [
+        ":node_modules/ts-loader",
+        ":node_modules/html-webpack-plugin",
+        ":node_modules/style-loader",
+        ":node_modules/css-loader",
+        ":node_modules/react",
+        ":node_modules/react-dom",
+        ":node_modules/webpack",
+        ":node_modules/web-vitals",
+    ],
+)
+
+bin.webpack_cli(
+    name = "header-build",
+    srcs = [
+        ":lib",
+        ":webpack.config.js",
+        "package.json"
+    ],
+    out_dirs = ["dist"],
+    args = [
+        "--config webpack.config.js",
+    ],
+    chdir = package_name(),
+    log_level = "debug",
+)
